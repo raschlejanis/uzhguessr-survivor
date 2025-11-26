@@ -173,5 +173,20 @@
   "id": 37,
   "image": "images/Naturhistorisches Museum.jpg",
   "answer": "Naturhistorisches Museum"
+},
+  {
+  "id": 38,
+  "image": "images/gebäude4.jpg",
+  "answer": "Archäologisches Institut"
+},
+{
+  "id": 39,
+  "image": "images/Deutsches Seminar.jpg",
+  "answer": "Deutsches Seminar"
+},
+{
+  "id": 40,
+  "image": "images/Erziehungswissenschaften.jpg",
+  "answer": "Institut für Erziehungswissenschaften"
 }
 ]
