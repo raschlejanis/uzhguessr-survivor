@@ -18,3 +18,10 @@ h1,h2{ margin:0 0 .75rem 0 } p{ margin:.25rem 0 1rem 0; color:var(--muted) } .st
 .option-btn.correct{ border-color:var(--success); background:#0e1a2a } .option-btn.wrong{ border-color:var(--danger); background:#1e0e14 }
 .btn{ padding:.9rem 1.2rem; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:#0e1230; color:var(--text); cursor:pointer } .btn.primary{ background:linear-gradient(135deg,var(--accent),var(--accent-2)); border:none; color:#071021; font-weight:700 } .btn.big{ font-size:1.05rem }
 .fade{ animation:fadeIn .5s ease } @keyframes fadeIn{ from{ opacity:0; transform:scale(.985) } to{ opacity:1; transform:scale(1) } }
+
+.games-played {
+  margin-top: 1.2rem;
+  font-size: 1rem;
+  color: var(--accent-2, #76e4f7);
+  text-align: left;
+}

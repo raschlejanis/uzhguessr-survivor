@@ -6,23 +6,34 @@
   <title>UZH Guessr — Survivor Mode</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
   <main class="container">
+
+    <!-- START SCREEN -->
     <section id="screen-start" class="screen active" aria-labelledby="start-title">
       <h1 id="start-title">Survivor Mode 🏆</h1>
+
       <p>Keep guessing correctly as long as you can. One mistake ends the run.</p>
+
       <div class="stats-inline">
         <span id="best-streak-start">Best: 0</span>
       </div>
+
       <button id="btn-start" class="btn primary big">Start</button>
+
+      <!-- 🆕 GAME COUNTER (Firebase-powered) -->
+      <div id="games-played" class="games-played">Total Games Played: loading...</div>
     </section>
 
+    <!-- GAME SCREEN -->
     <section id="screen-game" class="screen" aria-live="polite">
       <div class="hud">
         <div class="hud-left">
           <span id="streak-indicator" class="badge">Streak: 0</span>
           <span id="best-indicator" class="muted">Best: 0</span>
         </div>
+
         <div class="hud-right">
           <span id="round-indicator" class="muted">Remaining —</span>
         </div>
@@ -36,13 +47,50 @@
       <ul id="options" class="options" role="list"></ul>
     </section>
 
+    <!-- RESULT SCREEN -->
     <section id="screen-result" class="screen" aria-labelledby="result-title">
       <h2 id="result-title">Game Over</h2>
       <p id="result-summary"></p>
       <button id="btn-restart" class="btn primary">Play Again</button>
     </section>
+
   </main>
 
+  <!-- ✅ Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, query, orderBy,
+      doc, updateDoc, increment, getDoc, setDoc
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXMlSFVxzzlunW3Goh_6rMWCnbYCXanRQ",
+      authDomain: "uzh-guessr.firebaseapp.com",
+      projectId: "uzh-guessr",
+      storageBucket: "uzh-guessr.firebasestorage.app",
+      messagingSenderId: "599787012847",
+      appId: "1:599787012847:web:42efa3f57ee083546c111a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Expose to window for app.js
+    window.db = db;
+    window.fbCollection = collection;
+    window.fbAddDoc = addDoc;
+    window.fbGetDocs = getDocs;
+    window.fbQuery = query;
+    window.fbOrderBy = orderBy;
+    window.fbDoc = doc;
+    window.fbUpdateDoc = updateDoc;
+    window.fbIncrement = increment;
+    window.fbGetDoc = getDoc;
+    window.fbSetDoc = setDoc;
+  </script>
+
+  <!-- Survivor mode logic -->
   <script src="app.js" type="module"></script>
 </body>
 </html>

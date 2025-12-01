@@ -19,6 +19,49 @@ const EMBEDDED_QUESTIONS = [
   { id: 13, image: "images/Universitätsspital.png", answer: "Universitätsspital" }
 ];
 
+// --------------------------------------
+// 🆕 GAME COUNTER
+// --------------------------------------
+let gamesPlayed = 0;
+const STATS_DOC_ID = "gamesPlayed";
+
+async function loadGameCounter() {
+  try {
+    const ref = fbDoc(db, "stats", STATS_DOC_ID);
+    const snap = await fbGetDoc(ref);
+
+    if (snap.exists()) {
+      gamesPlayed = snap.data().gamesPlayed || 0;
+    } else {
+      await fbSetDoc(ref, { gamesPlayed: 0 });
+    }
+
+    document.getElementById("games-played").textContent =
+      `Total Games Played: ${gamesPlayed}`;
+  } catch (err) {
+    console.error("Counter error:", err);
+    document.getElementById("games-played").textContent = "Total Games Played: error";
+  }
+}
+
+async function incrementGamePlays() {
+  try {
+    const ref = fbDoc(db, "stats", STATS_DOC_ID);
+    await fbSetDoc(ref, { gamesPlayed: fbIncrement(1) }, { merge: true });
+
+    gamesPlayed++;
+    document.getElementById("games-played").textContent =
+      `Total Games Played: ${gamesPlayed}`;
+  } catch (err) {
+    console.error("Counter update failed:", err);
+  }
+}
+
+
+
+// --------------------------------------
+// GAME LOGIC
+// --------------------------------------
 let globalData = [];
 let remaining = [];
 let streak = 0;
@@ -38,45 +81,61 @@ const bestStart = document.getElementById('best-streak-start');
 const roundIndicator = document.getElementById('round-indicator');
 const resultSummary = document.getElementById('result-summary');
 
-function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+function shuffle(arr){
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 function uniqOptions(all, correct, needed){
-  const pool = shuffle(all.map(q=>q.answer).filter(a=>a!==correct));
+  const pool = shuffle(all.map(q => q.answer).filter(a => a !== correct));
   const set = new Set();
-  for(const a of pool){ set.add(a); if(set.size===needed) break; }
+  for (const a of pool) {
+    set.add(a);
+    if (set.size === needed) break;
+  }
   return Array.from(set);
 }
 
 async function loadData(){
-  try{
+  try {
     const res = await fetch(DATA_URL);
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
-    const valid = json.filter(q=>q && q.image && q.answer);
-    if(valid.length < OPTIONS_PER_QUESTION) throw new Error('Dataset too small');
-    return valid.map((q,idx)=>({ id:q.id ?? idx, image:q.image, answer:String(q.answer) }));
-  }catch(e){
+    const valid = json.filter(q => q && q.image && q.answer);
+    if (valid.length < OPTIONS_PER_QUESTION) throw new Error('Dataset too small');
+    return valid.map((q, idx) => ({ id: q.id ?? idx, image: q.image, answer: String(q.answer) }));
+  } catch(e) {
     console.warn('Using embedded fallback.', e);
     return EMBEDDED_QUESTIONS;
   }
 }
 
-function setScreen(target){ [screenStart,screenGame,screenResult].forEach(s=>s.classList.remove('active')); target.classList.add('active'); }
+function setScreen(target){
+  [screenStart, screenGame, screenResult].forEach(s => s.classList.remove('active'));
+  target.classList.add('active');
+}
 
 function startGame(){
+  incrementGamePlays();  // 🆕 count this session
+
   streak = 0;
   remaining = shuffle([...globalData]);
   bestStart.textContent = `Best: ${best}`;
   bestIndicator.textContent = `Best: ${best}`;
   streakIndicator.textContent = `Streak: ${streak}`;
+
   setScreen(screenGame);
   nextQuestion();
 }
 
 function nextQuestion(){
-  if(remaining.length === 0){
-    remaining = shuffle([...globalData]); // loop endlessly
+  if (remaining.length === 0) {
+    remaining = shuffle([...globalData]); // endless mode looping
   }
+
   current = remaining.pop();
   roundIndicator.textContent = `Remaining: ${remaining.length}`;
   renderQuestion(current);
@@ -85,35 +144,47 @@ function nextQuestion(){
 function renderQuestion(q){
   imgEl.src = q.image;
   imgEl.alt = `Which UZH location is this?`;
-  imgEl.classList.remove('fade'); void imgEl.offsetWidth; imgEl.classList.add('fade');
+
+  imgEl.classList.remove('fade');
+  void imgEl.offsetWidth;
+  imgEl.classList.add('fade');
+
   optionsEl.innerHTML = '';
 
-  const wrong = uniqOptions(globalData, q.answer, OPTIONS_PER_QUESTION-1);
+  const wrong = uniqOptions(globalData, q.answer, OPTIONS_PER_QUESTION - 1);
   const options = shuffle([q.answer, ...wrong]);
-  for(const label of options){
+
+  for (const label of options){
     const li = document.createElement('li');
     const btn = document.createElement('button');
     btn.className = 'option-btn';
-    btn.type = 'button';
     btn.textContent = label;
-    btn.addEventListener('click', ()=> handleAnswer(btn, label===q.answer));
+    btn.addEventListener('click', () => handleAnswer(btn, label === q.answer));
     li.appendChild(btn);
     optionsEl.appendChild(li);
   }
 }
 
 function handleAnswer(btn, correct){
-  [...document.querySelectorAll('.option-btn')].forEach(b=>b.disabled=true);
-  if(correct){
+  [...document.querySelectorAll('.option-btn')].forEach(b => b.disabled = true);
+
+  if (correct){
     btn.classList.add('correct');
     streak++;
     streakIndicator.textContent = `Streak: ${streak}`;
-    if(streak > best){ best = streak; bestIndicator.textContent = `Best: ${best}`; localStorage.setItem('best-streak', String(best)); }
+
+    if (streak > best){
+      best = streak;
+      bestIndicator.textContent = `Best: ${best}`;
+      localStorage.setItem('best-streak', String(best));
+    }
+
     setTimeout(nextQuestion, AUTO_ADVANCE_MS);
-  }else{
+  } else {
     btn.classList.add('wrong');
-    const correctBtn = [...document.querySelectorAll('.option-btn')].find(b=>b.textContent===current.answer);
-    if(correctBtn) correctBtn.classList.add('correct');
+    const correctBtn = [...document.querySelectorAll('.option-btn')]
+      .find(b => b.textContent === current.answer);
+    if (correctBtn) correctBtn.classList.add('correct');
     setTimeout(finish, 700);
   }
 }
@@ -126,10 +197,9 @@ function finish(){
 btnStart.addEventListener('click', startGame);
 btnRestart.addEventListener('click', ()=> setScreen(screenStart));
 
-loadData().then(data=>{
-  globalData = data;
-  bestStart.textContent = `Best: ${best}`;
-}).catch(e=>{
-  console.error(e);
-  alert('Failed to load data.');
-});
+// Load everything
+loadData()
+  .then(data => { globalData = data; bestStart.textContent = `Best: ${best}`; })
+  .catch(err => { console.error(err); alert('Failed to load data.'); });
+
+loadGameCounter();   // 🆕 load counter on startup
